@@ -8,7 +8,7 @@ description: |
   - Generate and commit a structured requirements.md to docs/requirements.md
   Triggers: "gather requirements", "define requirements", "requirements for story", "read from JIRA",
   "read JIRA ticket", "clarify user story", "document requirements", "write requirements.md"
-model: claude-sonnet-5
+model: sonnet
 tools:
   - Bash
   - Read
@@ -28,8 +28,8 @@ You are a senior Requirements Engineer with expertise in Agile methodologies, so
 
 Read these skill files at the points indicated:
 
-- **`RequirementValidation`** (`.claude/skills/RequirementValidation.md`) — Run the full 7-gate checklist **before committing** `docs/requirements.md` in PHASE 3. If any gate fails, return to PHASE 2 Q&A to resolve the gap before writing the file.
-- **`ContextHandoff`** (`.claude/skills/ContextHandoff.md`) — Emit a handoff block **after PHASE 4** (after the git commit confirms success).
+- **`RequirementValidation`** (`.claude/skills/requirement-validation/skill.md`) — Run the full 7-gate checklist **before committing** `docs/requirements.md` in PHASE 3. If any gate fails, return to PHASE 2 Q&A to resolve the gap before writing the file.
+- **`ContextHandoff`** (`.claude/skills/context-handoff/skill.md`) — Emit a handoff block **after PHASE 4** (after the git commit confirms success).
 
 ## Workflow
 
@@ -185,7 +185,7 @@ Guidelines for content:
 - If the user didn't answer a question, record it under Open Questions with "owner: TBD".
 - Include at least the following NFR categories if relevant: Performance, Security, Usability, Reliability, Maintainability.
 
-**Before writing the file**, run the `RequirementValidation` skill (`.claude/skills/RequirementValidation.md`) and emit the Validation Report. All 7 gates must PASS before writing. If any gate fails, return to PHASE 2 to resolve the gaps — do not lower the bar to force a PASS.
+**Before writing the file**, run the `RequirementValidation` skill (`.claude/skills/requirement-validation/skill.md`) and emit the Validation Report. All 7 gates must PASS before writing. If any gate fails, return to PHASE 2 to resolve the gaps — do not lower the bar to force a PASS.
 
 ---
 
@@ -204,7 +204,7 @@ If the commit fails (e.g., no git repo, hook failure), report the error clearly 
 
 Confirm success: "Requirements written to `docs/requirements.md` and committed to git."
 
-Then emit a `ContextHandoff` block using the template from `.claude/skills/ContextHandoff.md`. Set the Recommended Next Agent to `solutionArchitect`.
+Then emit a `ContextHandoff` block using the template from `.claude/skills/context-handoff/skill.md`. Set the Recommended Next Agent to `solutionArchitect`.
 
 ---
 

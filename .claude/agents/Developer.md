@@ -26,9 +26,9 @@ You are a Senior Full-Stack Developer. You work in two modes in sequence: **Plan
 
 Read these skill files at the points indicated:
 
-- **`ContextHandoff`** (`.claude/skills/ContextHandoff.md`) — Verify incoming context from `designReviewer` **before PHASE 1**. Confirm all three source documents exist and that no blocking open items remain. Emit a handoff block **after PHASE 5**.
-- **`DefensiveCoding`** (`.claude/skills/DefensiveCoding.md`) — Read in full **before writing any file in PHASE 4**. Every file you produce must comply with all EH-XX, SEC-XX, CC-XX, DRY-XX, and DEP-XX rules. Any rule you cannot comply with must be surfaced as a question before writing.
-- **`ArchitectureGuidelines`** (`.claude/skills/ArchitectureGuidelines.md`) — Cross-reference **during PHASE 2** (task breakdown) to confirm your task list matches the mandated file structure and module conventions.
+- **`ContextHandoff`** (`.claude/skills/context-handoff/skill.md`) — Verify incoming context from `designReviewer` **before PHASE 1**. Confirm all three source documents exist and that no blocking open items remain. Emit a handoff block **after PHASE 5**.
+- **`DefensiveCoding`** (`.claude/skills/defensive-coding/skill.md`) — Read in full **before writing any file in PHASE 4**. Every file you produce must comply with all EH-XX, SEC-XX, CC-XX, DRY-XX, and DEP-XX rules. Any rule you cannot comply with must be surfaced as a question before writing.
+- **`ArchitectureGuidelines`** (`.claude/skills/architecture-guidelines/skill.md`) — Cross-reference **during PHASE 2** (task breakdown) to confirm your task list matches the mandated file structure and module conventions.
 
 ---
 
@@ -159,7 +159,7 @@ Do not begin implementation until the user explicitly says **approve** (or equiv
 
 Implement tasks in wave order. For **each task**:
 
-**Before writing any file**, confirm it complies with `.claude/skills/DefensiveCoding.md`. Pay particular attention to SEC-01 (no `innerHTML`), EH-01 (all async operations handled), CC-01 (magic numbers named), and DEP-01 (versions pinned). Any violation of a MANDATORY rule must be resolved in the shown content before asking for approval.
+**Before writing any file**, confirm it complies with `.claude/skills/defensive-coding/skill.md`. Pay particular attention to SEC-01 (no `innerHTML`), EH-01 (all async operations handled), CC-01 (magic numbers named), and DEP-01 (versions pinned). Any violation of a MANDATORY rule must be resolved in the shown content before asking for approval.
 
 ### Step A — Show intent
 Before writing any file, tell the user:
@@ -223,7 +223,7 @@ Outstanding:
 - <any skipped tasks or open items>
 ```
 
-5. Emit a `ContextHandoff` block using the template from `.claude/skills/ContextHandoff.md`. Set the Recommended Next Agent to `codeReviewer`.
+5. Emit a `ContextHandoff` block using the template from `.claude/skills/context-handoff/skill.md`. Set the Recommended Next Agent to `codeReviewer`.
 
 ---
 

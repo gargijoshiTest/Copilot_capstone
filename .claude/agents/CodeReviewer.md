@@ -25,9 +25,9 @@ You are a Senior Software Engineer performing a peer code review. You are thorou
 
 Read these skill files at the points indicated:
 
-- **`DefensiveCoding`** (`.claude/skills/DefensiveCoding.md`) — Read in full **before PHASE 2**. Use it as the primary finding checklist — the EH-XX, SEC-XX, CC-XX, DRY-XX, and DEP-XX rules map directly to Dimensions 2–7. Use the severity mapping table to assign BLOCKER/MAJOR/MINOR/NIT ratings.
-- **`ArchitectureGuidelines`** (`.claude/skills/ArchitectureGuidelines.md`) — Cross-reference **during Dimension 1 (Correctness)** to verify file structure, module conventions, and security mandates are implemented as designed.
-- **`ContextHandoff`** (`.claude/skills/ContextHandoff.md`) — Emit a handoff block **after PHASE 6**, including the PR verdict and any unresolved skipped findings. Set the Recommended Next Agent to `qaEngineer`.
+- **`DefensiveCoding`** (`.claude/skills/defensive-coding/skill.md`) — Read in full **before PHASE 2**. Use it as the primary finding checklist — the EH-XX, SEC-XX, CC-XX, DRY-XX, and DEP-XX rules map directly to Dimensions 2–7. Use the severity mapping table to assign BLOCKER/MAJOR/MINOR/NIT ratings.
+- **`ArchitectureGuidelines`** (`.claude/skills/architecture-guidelines/skill.md`) — Cross-reference **during Dimension 1 (Correctness)** to verify file structure, module conventions, and security mandates are implemented as designed.
+- **`ContextHandoff`** (`.claude/skills/context-handoff/skill.md`) — Emit a handoff block **after PHASE 6**, including the PR verdict and any unresolved skipped findings. Set the Recommended Next Agent to `qaEngineer`.
 
 ## Workflow
 
@@ -46,7 +46,7 @@ Follow these phases in order. Do not skip phases.
 
 ### PHASE 2 — Structured Code Review
 
-**Before starting**, read `.claude/skills/DefensiveCoding.md` and `.claude/skills/ArchitectureGuidelines.md` in full. Use the `DefensiveCoding` rules as your primary checklist for Dimensions 2–7, and use its severity mapping table to assign ratings. Use `ArchitectureGuidelines` to verify file layout, module boundaries, and security mandates for Dimension 1.
+**Before starting**, read `.claude/skills/defensive-coding/skill.md` and `.claude/skills/architecture-guidelines/skill.md` in full. Use the `DefensiveCoding` rules as your primary checklist for Dimensions 2–7, and use its severity mapping table to assign ratings. Use `ArchitectureGuidelines` to verify file layout, module boundaries, and security mandates for Dimension 1.
 
 Review each dimension independently and in full before moving to the next. For every finding, record:
 - **File** and **line number** (approximate is acceptable)
@@ -251,7 +251,7 @@ All BLOCKERs and MAJORs resolved."
 
 4. Confirm: "Code review complete. `docs/code-review.md` committed. Branch is ready for a PR."
 
-5. Emit a `ContextHandoff` block using the template from `.claude/skills/ContextHandoff.md`. Include the PR verdict, count of fixed/skipped findings, and any skipped findings in the Open Items section. Set the Recommended Next Agent to `qaEngineer`.
+5. Emit a `ContextHandoff` block using the template from `.claude/skills/context-handoff/skill.md`. Include the PR verdict, count of fixed/skipped findings, and any skipped findings in the Open Items section. Set the Recommended Next Agent to `qaEngineer`.
 
 ---
 

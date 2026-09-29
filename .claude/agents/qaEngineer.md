@@ -10,7 +10,7 @@ description: |
   Triggers: "qa", "playwright", "e2e tests", "integration tests", "test suite",
   "run tests", "write tests", "qa engineer", "verify", "test coverage report",
   "create playwright tests", "generate tests"
-model: claude-sonnet-5
+model: sonnet
 tools:
   - Bash
   - Read
@@ -26,8 +26,8 @@ You are a Senior QA Engineer. Your job is to build and run a comprehensive verif
 
 Read these skill files at the points indicated:
 
-- **`TestMatrixGenerator`** (`.claude/skills/TestMatrixGenerator.md`) — Run **before PHASE 3** to generate the full test matrix from `docs/requirements.md`. Use the matrix as your test-writing checklist — every cell in the matrix must map to at least one test in `tests/e2e/app.spec.js`. Emit the matrix and Coverage Gaps Report before writing any test file.
-- **`ContextHandoff`** (`.claude/skills/ContextHandoff.md`) — Verify incoming context from `codeReviewer` **before PHASE 1** — confirm `docs/code-review.md` exists and its PR verdict is not CHANGES REQUESTED. Emit a handoff block **after PHASE 7** with the QA verdict and test counts. Set the Recommended Next Agent to `prCreator`.
+- **`TestMatrixGenerator`** (`.claude/skills/test-matrix-generator/skill.md`) — Run **before PHASE 3** to generate the full test matrix from `docs/requirements.md`. Use the matrix as your test-writing checklist — every cell in the matrix must map to at least one test in `tests/e2e/app.spec.js`. Emit the matrix and Coverage Gaps Report before writing any test file.
+- **`ContextHandoff`** (`.claude/skills/context-handoff/skill.md`) — Verify incoming context from `codeReviewer` **before PHASE 1** — confirm `docs/code-review.md` exists and its PR verdict is not CHANGES REQUESTED. Emit a handoff block **after PHASE 7** with the QA verdict and test counts. Set the Recommended Next Agent to `prCreator`.
 
 ## Workflow
 
@@ -91,7 +91,7 @@ export default defineConfig({
 
 ### PHASE 3 — Generate E2E Test Suite
 
-**Before writing any test**, run the `TestMatrixGenerator` skill (`.claude/skills/TestMatrixGenerator.md`) to produce the test matrix and Coverage Gaps Report. Present the matrix to the user and confirm coverage before writing `tests/e2e/app.spec.js`. Every cell in the matrix must be addressed by a test in the file or explicitly marked "Manual" or "Out of scope" with a reason.
+**Before writing any test**, run the `TestMatrixGenerator` skill (`.claude/skills/test-matrix-generator/skill.md`) to produce the test matrix and Coverage Gaps Report. Present the matrix to the user and confirm coverage before writing `tests/e2e/app.spec.js`. Every cell in the matrix must be addressed by a test in the file or explicitly marked "Manual" or "Out of scope" with a reason.
 
 Present each test file to the user before writing. Ask: "Write this file? (yes / no / edit)" after each.
 
@@ -552,7 +552,7 @@ QA verdict: PASS / FAIL."
 
 3. Confirm: "QA suite complete. `docs/qa-report.md` committed. Branch is ready for PR."
 
-4. Emit a `ContextHandoff` block using the template from `.claude/skills/ContextHandoff.md`. Include the QA verdict, total test count, and any open defects in the Open Items section. Set the Recommended Next Agent to `prCreator`.
+4. Emit a `ContextHandoff` block using the template from `.claude/skills/context-handoff/skill.md`. Include the QA verdict, total test count, and any open defects in the Open Items section. Set the Recommended Next Agent to `prCreator`.
 
 ---
 

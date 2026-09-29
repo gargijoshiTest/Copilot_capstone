@@ -20,9 +20,18 @@ export const meta = {
 
 // Pass a JIRA URL as args when invoking this workflow:
 //   Workflow({ name: 'sdlc', args: 'https://company.atlassian.net/browse/PROJ-1' })
+// Or pass an object for more control:
+//   Workflow({ name: 'sdlc', args: { jiraUrl: 'https://...', docsDir: 'docs/TES-2' } })
 const jiraUrl = (typeof args === 'string' && args.startsWith('http'))
   ? args
-  : 'ASK_USER'
+  : (args && typeof args === 'object' && args.jiraUrl)
+    ? args.jiraUrl
+    : 'ASK_USER'
+
+// Validate docsDir: must be a safe relative path under docs/, no traversal, safe chars only.
+const rawDocsDir = (args && typeof args === 'object' && args.docsDir) ? String(args.docsDir) : 'docs'
+const SAFE_PATH_RE = /^docs\/[a-zA-Z0-9_-]+$/
+const docsDir = SAFE_PATH_RE.test(rawDocsDir) ? rawDocsDir : 'docs'
 
 // ─── Gate schema ─────────────────────────────────────────────────────────────
 // The gate agent presents each phase's output to the user and captures their decision.
@@ -127,10 +136,12 @@ const r1 = await runWithGate(
 JIRA ticket: ${jiraUrl === 'ASK_USER' ? '(ask the user for the JIRA URL before proceeding)' : jiraUrl}
 
 Context:
-- Step 1 of 7. Next step (solutionArchitect) reads docs/requirements.md.
+- Step 1 of 7. Next step (solutionArchitect) reads ${docsDir}/requirements.md.
+- All SDLC output documents for this cycle MUST be written to "${docsDir}/" (not root docs/).
+  Create the directory with: mkdir -p ${docsDir}
 - Ask only essential clarifying questions. Accept sensible defaults for everything else.
-- REQUIRED DELIVERABLE: docs/requirements.md committed to git.${suffix}`,
-  'docs/requirements.md',
+- REQUIRED DELIVERABLE: ${docsDir}/requirements.md committed to git.${suffix}`,
+  `${docsDir}/requirements.md`,
   'Architecture'
 )
 if (r1.stopped) return { status: 'stopped', stoppedAfter: 'Requirements', jiraUrl }
@@ -143,11 +154,12 @@ const r2 = await runWithGate(
   (suffix) => `You are a solution architect. Read .claude/agents/solutionArchitect.md first and follow every step.
 
 Context:
-- docs/requirements.md exists — read it as your primary input.
-- Step 2 of 7. Next step (designReviewer) reads docs/architecture.md.
+- ${docsDir}/requirements.md exists — read it as your primary input.
+- Step 2 of 7. Next step (designReviewer) reads ${docsDir}/architecture.md.
+- All SDLC output documents for this cycle MUST be written to "${docsDir}/" (not root docs/).
 - Decide autonomously where requirements are clear. Ask the user only if a decision cannot be inferred.
-- REQUIRED DELIVERABLE: docs/architecture.md committed. Must include Mermaid diagrams and NFR decisions table.${suffix}`,
-  'docs/architecture.md',
+- REQUIRED DELIVERABLE: ${docsDir}/architecture.md committed. Must include Mermaid diagrams and NFR decisions table.${suffix}`,
+  `${docsDir}/architecture.md`,
   'Design Review'
 )
 if (r2.stopped) return { status: 'stopped', stoppedAfter: 'Architecture', jiraUrl }
@@ -160,12 +172,13 @@ const r3 = await runWithGate(
   (suffix) => `You are a senior design reviewer. Read .claude/agents/designReviewer.md first and follow every step.
 
 Context:
-- docs/requirements.md and docs/architecture.md exist — read both.
-- Step 3 of 7. Next step (Developer) reads docs/design-review.md and docs/architecture.md.
+- ${docsDir}/requirements.md and ${docsDir}/architecture.md exist — read both.
+- Step 3 of 7. Next step (Developer) reads ${docsDir}/design-review.md and ${docsDir}/architecture.md.
+- All SDLC output documents for this cycle MUST be written to "${docsDir}/" (not root docs/).
 - Present all findings with RISK/GAP/DECISION-NEEDED labels. Ask Accept/Reject/Defer on each.
-- Apply accepted changes to docs/architecture.md before finishing.
-- REQUIRED DELIVERABLES: docs/design-review.md and updated docs/architecture.md, both committed.${suffix}`,
-  'docs/design-review.md',
+- Apply accepted changes to ${docsDir}/architecture.md before finishing.
+- REQUIRED DELIVERABLES: ${docsDir}/design-review.md and updated ${docsDir}/architecture.md, both committed.${suffix}`,
+  `${docsDir}/design-review.md`,
   'Implementation'
 )
 if (r3.stopped) return { status: 'stopped', stoppedAfter: 'Design Review', jiraUrl }
@@ -175,16 +188,17 @@ if (r3.stopped) return { status: 'stopped', stoppedAfter: 'Design Review', jiraU
 const r4 = await runWithGate(
   'Implementation',
   'Implementation Gate',
-  (suffix) => `You are a full-cycle developer. Read .claude/agents/Developer.md first and follow every step.
+  (suffix) => `You are a full-cycle developer. Read .claude/agents/developer.md first and follow every step.
 
 Context:
-- docs/requirements.md, docs/architecture.md, and docs/design-review.md exist — read all three.
+- ${docsDir}/requirements.md, ${docsDir}/architecture.md, and ${docsDir}/design-review.md exist — read all three.
 - Step 4 of 7. CodeReviewer and qaEngineer will review and test what you write.
-- Generate docs/impl-plan.md first; wait for user approval before writing source files.
+- All SDLC output documents for this cycle MUST be written to "${docsDir}/" (not root docs/).
+- Generate ${docsDir}/impl-plan.md first; wait for user approval before writing source files.
 - Show each file before writing it; follow the wave-by-wave protocol from the agent spec.
 - Run npm test after the final wave. Commit all files.
-- REQUIRED DELIVERABLES: docs/impl-plan.md and all source files committed.${suffix}`,
-  'docs/impl-plan.md',
+- REQUIRED DELIVERABLES: ${docsDir}/impl-plan.md and all source files committed.${suffix}`,
+  `${docsDir}/impl-plan.md`,
   'Code Review'
 )
 if (r4.stopped) return { status: 'stopped', stoppedAfter: 'Implementation', jiraUrl }
@@ -194,16 +208,17 @@ if (r4.stopped) return { status: 'stopped', stoppedAfter: 'Implementation', jira
 const r5 = await runWithGate(
   'Code Review',
   'Code Review Gate',
-  (suffix) => `You are a peer code reviewer. Read .claude/agents/CodeReviewer.md first and follow every step.
+  (suffix) => `You are a peer code reviewer. Read .claude/agents/codeReviewer.md first and follow every step.
 
 Context:
 - All source files and docs exist — read them.
 - Step 5 of 7. qaEngineer will build tests on top of the reviewed code.
+- All SDLC output documents for this cycle MUST be written to "${docsDir}/" (not root docs/).
 - Review all 7 dimensions in full. Present findings; ask Fix/Skip/Question for each.
 - Fix all BLOCKER and MAJOR findings with user approval per finding.
 - Run npm test after fixes. Commit all changes.
-- REQUIRED DELIVERABLE: docs/code-review.md committed. npm test must pass.${suffix}`,
-  'docs/code-review.md',
+- REQUIRED DELIVERABLE: ${docsDir}/code-review.md committed. npm test must pass.${suffix}`,
+  `${docsDir}/code-review.md`,
   'QA'
 )
 if (r5.stopped) return { status: 'stopped', stoppedAfter: 'Code Review', jiraUrl }
@@ -217,12 +232,13 @@ const r6 = await runWithGate(
 
 Context:
 - All source files, docs, and unit tests exist — read them.
-- Step 6 of 7. PRCreator will use docs/qa-report.md as test evidence for the PR.
+- Step 6 of 7. PRCreator will use ${docsDir}/qa-report.md as test evidence for the PR.
+- All SDLC output documents for this cycle MUST be written to "${docsDir}/" (not root docs/).
 - Install Playwright if needed. Show tests/e2e/app.spec.js before writing; ask for confirmation.
 - Run both npm test and npx playwright test. Fix real app bugs found (with user approval).
 - Update .github/workflows/ci.yml to include the e2e-tests job.
-- REQUIRED DELIVERABLES: tests/e2e/app.spec.js, docs/qa-report.md, updated ci.yml — all committed. All tests must pass.${suffix}`,
-  'docs/qa-report.md',
+- REQUIRED DELIVERABLES: tests/e2e/app.spec.js, ${docsDir}/qa-report.md, updated ci.yml — all committed. All tests must pass.${suffix}`,
+  `${docsDir}/qa-report.md`,
   'Pull Request'
 )
 if (r6.stopped) return { status: 'stopped', stoppedAfter: 'QA', jiraUrl }
@@ -235,11 +251,11 @@ phase('Pull Request')
 log('PR phase starting — assembling description and pushing branch.')
 
 await agent(
-  `You are a PR creator. Read .claude/agents/PRCreator.md first and follow every step.
+  `You are a PR creator. Read .claude/agents/prCreator.md first and follow every step.
 
 Context:
 - All docs and source files exist. This is the final step of the SDLC workflow.
-- Read every file in docs/ for context. Run npm test and npx playwright test live for the Test Evidence section.
+- Read every file in ${docsDir}/ for context. Run npm test and npx playwright test live for the Test Evidence section.
 - Generate the full PR description with all 5 required sections (Summary, Changes Made, Test Evidence, Known Limitations, Reviewer Checklist).
 - Present the description to the user and wait for their approval before pushing.
 - Write CHANGELOG.md, commit all remaining uncommitted files, push the branch.
@@ -255,6 +271,7 @@ log('SDLC workflow complete — all phases finished.')
 
 return {
   jiraUrl,
+  docsDir,
   status: 'complete',
   phasesCompleted: [
     'Requirements',
@@ -266,12 +283,12 @@ return {
     'Pull Request',
   ],
   deliverables: [
-    'docs/requirements.md',
-    'docs/architecture.md',
-    'docs/design-review.md',
-    'docs/impl-plan.md',
-    'docs/code-review.md',
-    'docs/qa-report.md',
+    `${docsDir}/requirements.md`,
+    `${docsDir}/architecture.md`,
+    `${docsDir}/design-review.md`,
+    `${docsDir}/impl-plan.md`,
+    `${docsDir}/code-review.md`,
+    `${docsDir}/qa-report.md`,
     'CHANGELOG.md',
     'tests/e2e/app.spec.js',
   ],

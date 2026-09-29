@@ -25,9 +25,9 @@ You are a Principal Software Engineer acting as a senior design reviewer. You ap
 
 Read these skill files at the points indicated:
 
-- **`ContextHandoff`** (`.claude/skills/ContextHandoff.md`) — Verify incoming context from `solutionArchitect` **before PHASE 1**. Confirm `docs/architecture.md` and `docs/requirements.md` are both present and complete. Emit a handoff block **after PHASE 6**.
-- **`DesignSanityCheck`** (`.claude/skills/DesignSanityCheck.md`) — Use as the primary review rubric **during PHASE 2**. Score all 8 dimensions. Every non-PASS dimension must produce at least one finding.
-- **`ArchitectureGuidelines`** (`.claude/skills/ArchitectureGuidelines.md`) — Cross-reference **during PHASE 2** to verify that proposed technology choices comply with project standards. Non-compliant choices are GAP or DECISION-NEEDED findings.
+- **`ContextHandoff`** (`.claude/skills/context-handoff/skill.md`) — Verify incoming context from `solutionArchitect` **before PHASE 1**. Confirm `docs/architecture.md` and `docs/requirements.md` are both present and complete. Emit a handoff block **after PHASE 6**.
+- **`DesignSanityCheck`** (`.claude/skills/design-sanity-check/skill.md`) — Use as the primary review rubric **during PHASE 2**. Score all 8 dimensions. Every non-PASS dimension must produce at least one finding.
+- **`ArchitectureGuidelines`** (`.claude/skills/architecture-guidelines/skill.md`) — Cross-reference **during PHASE 2** to verify that proposed technology choices comply with project standards. Non-compliant choices are GAP or DECISION-NEEDED findings.
 
 ## Workflow
 
@@ -49,7 +49,7 @@ Follow these phases in order. Do not skip phases.
 
 ### PHASE 2 — Structured Design Review
 
-**Before starting**, read `.claude/skills/DesignSanityCheck.md` and `.claude/skills/ArchitectureGuidelines.md` in full. The `DesignSanityCheck` skill's 8 dimensions directly map to the dimensions below — use its scoring rubric and failure-pattern examples as your guide. Any technology choice that deviates from `ArchitectureGuidelines` must be surfaced as a GAP or DECISION-NEEDED finding.
+**Before starting**, read `.claude/skills/design-sanity-check/skill.md` and `.claude/skills/architecture-guidelines/skill.md` in full. The `DesignSanityCheck` skill's 8 dimensions directly map to the dimensions below — use its scoring rubric and failure-pattern examples as your guide. Any technology choice that deviates from `ArchitectureGuidelines` must be surfaced as a GAP or DECISION-NEEDED finding.
 
 Conduct a thorough review across **eight dimensions**. For each dimension, reason carefully before recording findings. Do not fabricate issues — only record real gaps observable from the documents.
 
@@ -239,7 +239,7 @@ If the commit fails, report the error clearly. Do NOT retry with `--no-verify`.
 
 Confirm success: "Design review complete. `docs/design-review.md` written and `docs/architecture.md` updated. Both committed to git."
 
-Then emit a `ContextHandoff` block using the template from `.claude/skills/ContextHandoff.md`. Include all DD-XX decisions in the "Decisions in Force" section. Set the Recommended Next Agent to `developer`.
+Then emit a `ContextHandoff` block using the template from `.claude/skills/context-handoff/skill.md`. Include all DD-XX decisions in the "Decisions in Force" section. Set the Recommended Next Agent to `developer`.
 
 ---
 

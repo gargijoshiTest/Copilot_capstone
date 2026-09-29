@@ -29,8 +29,8 @@ You are a Senior Engineer completing the final step of the agentic SDLC cycle. Y
 
 Read these skill files at the points indicated:
 
-- **`ChangeLogFormatter`** (`.claude/skills/ChangeLogFormatter.md`) — Read in full **before PHASE 2**. Use Part 1 (git history parsing) to classify commits and extract requirement references. Use Part 2 (PR description template) as the exact structure for the PR body. Use Part 3 (CHANGELOG template) for the CHANGELOG entry in PHASE 3. Run the Part 4 quality gates before calling `gh pr create`.
-- **`ContextHandoff`** (`.claude/skills/ContextHandoff.md`) — Verify incoming context from `qaEngineer` **before PHASE 1** — confirm `docs/qa-report.md` exists and QA verdict is PASS or APPROVED WITH CONDITIONS. If the QA verdict is FAIL, stop and tell the user to resolve open defects first.
+- **`ChangeLogFormatter`** (`.claude/skills/change-log-formatter/skill.md`) — Read in full **before PHASE 2**. Use Part 1 (git history parsing) to classify commits and extract requirement references. Use Part 2 (PR description template) as the exact structure for the PR body. Use Part 3 (CHANGELOG template) for the CHANGELOG entry in PHASE 3. Run the Part 4 quality gates before calling `gh pr create`.
+- **`ContextHandoff`** (`.claude/skills/context-handoff/skill.md`) — Verify incoming context from `qaEngineer` **before PHASE 1** — confirm `docs/qa-report.md` exists and QA verdict is PASS or APPROVED WITH CONDITIONS. If the QA verdict is FAIL, stop and tell the user to resolve open defects first.
 
 ## Workflow
 
@@ -84,7 +84,7 @@ Report to the user: "Context loaded. Branch: `<name>`. Files changed: N. Proceed
 
 ### PHASE 2 — Draft PR Description
 
-**Before drafting**, read `.claude/skills/ChangeLogFormatter.md` Parts 1–2 in full. Use the git history parsing rules (Part 1) to classify every commit and extract all FR-XX/AC-XX/DD-XX references. Use the PR description template (Part 2) as the exact structure — do not invent sections or omit required ones.
+**Before drafting**, read `.claude/skills/change-log-formatter/skill.md` Parts 1–2 in full. Use the git history parsing rules (Part 1) to classify every commit and extract all FR-XX/AC-XX/DD-XX references. Use the PR description template (Part 2) as the exact structure — do not invent sections or omit required ones.
 
 Compose the full PR description using ONLY facts from the gathered context. Never fabricate test results, file names, or requirement IDs.
 
@@ -187,7 +187,7 @@ After the user approves the PR description, check if `CHANGELOG.md` exists:
 ls CHANGELOG.md 2>/dev/null || echo "NOT_FOUND"
 ```
 
-Read `.claude/skills/ChangeLogFormatter.md` Part 3 before writing the entry. Use the exact section headings and tense rules defined there.
+Read `.claude/skills/change-log-formatter/skill.md` Part 3 before writing the entry. Use the exact section headings and tense rules defined there.
 
 If it does NOT exist, create it with this structure (show first, then write on confirmation):
 
@@ -249,7 +249,7 @@ EOF
    ```
    If the push fails (remote rejection, no upstream), report the exact error and stop — do not force-push.
 
-2. Run the Part 4 quality gates from `.claude/skills/ChangeLogFormatter.md` before creating the PR. All gates must pass — if any fail, fix the PR description first.
+2. Run the Part 4 quality gates from `.claude/skills/change-log-formatter/skill.md` before creating the PR. All gates must pass — if any fail, fix the PR description first.
 
 3. Check for an existing open PR on this branch to avoid duplicates:
    ```
