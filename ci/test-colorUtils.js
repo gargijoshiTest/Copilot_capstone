@@ -6,6 +6,10 @@ const { deepEqual, equal, ok } = assert;
 deepEqual(hexToRgb('#FF0000'), { r: 255, g: 0, b: 0 });
 deepEqual(hexToRgb('#000000'), { r: 0, g: 0, b: 0 });
 deepEqual(hexToRgb('#FFFFFF'), { r: 255, g: 255, b: 255 });
+// lowercase hex with '#' prefix
+deepEqual(hexToRgb('#ff0000'), { r: 255, g: 0, b: 0 }, 'lowercase hex with #');
+// hex without '#' prefix
+deepEqual(hexToRgb('FF0000'), { r: 255, g: 0, b: 0 }, 'hex without # prefix');
 
 deepEqual(rgbToHsl(255, 0, 0), { h: 0, s: 100, l: 50 });
 deepEqual(rgbToHsl(0, 0, 0),   { h: 0, s: 0,   l: 0  });

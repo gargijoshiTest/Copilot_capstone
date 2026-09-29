@@ -9,7 +9,8 @@
  */
 
 import assert from 'node:assert/strict';
-import { buildRgbString, buildHslString, evalWcagAA, debounce } from '../lib/playground.js';
+import { buildRgbString, buildHslString, evalWcagAA } from '../lib/playground.js';
+import { debounce } from '../lib/debounce.js';
 import { getContrastRatio } from '../lib/colorUtils.js';
 
 const { equal, ok } = assert;
