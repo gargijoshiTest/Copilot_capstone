@@ -1,6 +1,6 @@
 # Requirements: Color Palette Explorer
 
-_Generated: 2026-09-11_
+_Generated: 2026-09-29_
 _Source: JIRA TES-2 — https://epam-team-yxi9fjzt.atlassian.net/browse/TES-2_
 
 ---
@@ -10,6 +10,12 @@ _Source: JIRA TES-2 — https://epam-team-yxi9fjzt.atlassian.net/browse/TES-2_
 > As a web user or designer, when I need to find colors for a design, I want a responsive color palette explorer so that I can quickly view, search, filter, and inspect color values.
 >
 > As a user, when I open a color from the list, I want to see detailed color information so that I can copy and use the values in my work.
+
+---
+
+## Personas
+
+- **Persona: Designer** — A UI/UX designer or front-end developer who needs to locate specific color values for a design system or web page. Primary goal: quickly find, inspect, and copy color values (HEX, RGB, HSL) and verify contrast ratios for WCAG compliance.
 
 ---
 
@@ -38,28 +44,30 @@ _Source: JIRA TES-2 — https://epam-team-yxi9fjzt.atlassian.net/browse/TES-2_
 - NFR-04: **Compatibility** — The app shall be supported on the latest stable version of Google Chrome.
 - NFR-05: **Security** — All data rendered into the DOM shall be sanitized or escaped. Clipboard and ARIA announcements shall be invoked safely.
 - NFR-06: **Maintainability** — Code shall be reviewed and documented before merge.
+- NFR-07: **Reliability** — If the `colors.v1.json` fetch fails for any reason (network error, `file://` protocol, non-2xx response), the app shall remain fully functional using the embedded fallback dataset and shall not crash or enter an error-only state.
 
 ---
 
 ## Acceptance Criteria
 
-- AC-01: Given the app loads successfully, the swatch list renders with color name and HEX visible for each entry, beneath the filter controls.
-- AC-02: Given the user types in the search input, the swatch list updates in real time with no page reload.
-- AC-03: Given the user selects a family from the dropdown, only swatches matching that family are shown immediately.
-- AC-04: Given the user clicks or presses Enter on a swatch, a details dialog opens showing Name, HEX, RGB, HSL, contrast vs. white, and contrast vs. black.
-- AC-05: Given the details dialog is open, clicking the copy action copies the HEX value to the clipboard.
-- AC-06: Given `colors.v1.json` cannot be fetched, the app loads the embedded fallback dataset and displays a warning-styled offline banner.
-- AC-07: Given `npm test` is run, the filter smoke test passes.
-- AC-08: Given a pull request is opened, the GitHub Actions CI build-and-test job completes successfully.
+- AC-01: Given the application is open in a browser, when the page finishes loading, then all color swatches from `colors.v1.json` are displayed with color name and HEX value visible, positioned beneath the filter controls.
+- AC-02: Given the swatch list is displayed, when the user types a search term in the text input, then only swatches whose names contain the search term (case-insensitive) are shown without a full page reload.
+- AC-03: Given the swatch list is displayed, when the user selects a color family from the dropdown, then only swatches belonging to that color family are shown immediately.
+- AC-04: Given the swatch list is displayed, when the user clicks on a swatch or presses Enter while a swatch is focused, then a details dialog opens showing the color Name, HEX, RGB, HSL, contrast ratio vs. white, and contrast ratio vs. black.
+- AC-05: Given the details dialog is open, when the user clicks the copy-to-clipboard action, then the HEX value is copied to the system clipboard.
+- AC-06: Given the application cannot fetch `colors.v1.json`, when the app initialises, then the embedded fallback dataset is loaded and a non-dismissible warning banner styled with warning color is displayed.
+- AC-07: Given the project is set up locally, when the developer runs `npm test`, then the filter smoke test completes with exit code 0.
+- AC-08: Given a pull request is opened against the main branch, when GitHub Actions CI runs, then the build-and-test jobs complete successfully.
 
 ---
 
 ## Edge Cases & Error Handling
 
 - EC-01: If `colors.v1.json` fails to load for any reason, the embedded fallback dataset is used and the offline banner is shown.
-- EC-02: If the search query or family filter yields zero results, the app shall display an empty state message rather than a blank list.
+- EC-02: If the search query or family filter yields zero results, the app shall display an empty-state message rather than a blank list.
 - EC-03: Chunked rendering shall be applied for lists larger than a configurable threshold to prevent UI freeze.
-- EC-04: If the clipboard API is unavailable, the copy action shall fail silently or show a fallback message.
+- EC-04: If the Clipboard API is unavailable or blocked by the browser, the copy action shall display a fallback message rather than throwing an unhandled exception.
+- EC-05: If the `colors.v1.json` data source (or embedded fallback) resolves to an empty array, the app shall display an empty-state message rather than rendering a blank or broken swatch container.
 
 ---
 
@@ -68,7 +76,7 @@ _Source: JIRA TES-2 — https://epam-team-yxi9fjzt.atlassian.net/browse/TES-2_
 - DEP-01: Color data is sourced from the static file `colors.v1.json` bundled with the application.
 - DEP-02: CI runs on GitHub Actions.
 - DEP-03: Local development server is started with `npm run serve`.
-- ASM-01: The primary (and only) target persona is designers.
+- ASM-01: The primary target persona is the Designer (defined above); secondary persona is any general web user browsing colors.
 - ASM-02: Color family categories are pre-defined within `colors.v1.json` and not derived dynamically at runtime.
 - ASM-03: The target browser is the latest stable Google Chrome only.
 - ASM-04: Dataset size for this story is up to 5,000 items; server-side paging for datasets above 20,000 items is out of scope.
@@ -77,6 +85,6 @@ _Source: JIRA TES-2 — https://epam-team-yxi9fjzt.atlassian.net/browse/TES-2_
 
 ## Open Questions
 
-- OQ-01: Should the offline banner be dismissible by the user, or persist for the entire session? — owner: TBD
-- OQ-02: What is the keyboard navigation model inside the swatch list (Tab vs. arrow keys) and should Escape close the details modal? — owner: TBD
-- OQ-03: Is there a production deployment target (e.g., GitHub Pages), or is this a local prototype only? — owner: TBD
+- OQ-01: Should the offline banner be dismissible by the user, or persist for the entire session? — owner: TBD — Blocking: No (FR-09 specifies non-dismissible as the default; this is confirmed unless overridden by product owner)
+- OQ-02: What is the keyboard navigation model inside the swatch list (Tab vs. arrow keys) and should Escape close the details modal? — owner: TBD — Blocking: No (default: Tab-to-focus, Enter-to-open, Escape-to-close; architect may proceed with this sensible default)
+- OQ-03: Is there a production deployment target (e.g., GitHub Pages), or is this a local prototype only? — owner: TBD — Blocking: No (local prototype is the minimum; deployment target does not affect core implementation)
