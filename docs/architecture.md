@@ -1,6 +1,6 @@
 # Architecture: Color Palette Explorer
 
-_Generated: 2026-09-15_
+_Generated: 2026-09-29_
 _Based on: docs/requirements.md (JIRA TES-2)_
 
 ---
@@ -184,6 +184,7 @@ sequenceDiagram
 | Security | `textContent` (never `innerHTML`) for all data-derived DOM writes; JSON entries normalised before render; Clipboard API invoked only on explicit user gesture; CSP header `default-src 'self'` served via `http-server --header` flag |
 | Maintainability | `lib/filter.js` and `lib/colorUtils.js` are pure modules with no DOM coupling — each independently testable; `app.js` structured as ES module with named exports (`initApp`, `applyFilter`, `renderChunk`, `openModal`) |
 | Compatibility — Chrome only | ES2020 syntax (`fetch`, optional chaining, `Promise`, `navigator.clipboard`) used freely; no transpile or polyfill step needed |
+| Reliability — fully functional on any fetch failure | Embedded fallback dataset hard-coded inside `app.js`; `try/catch` around `fetch` + non-2xx check; on any failure path app transitions to `ready` state using fallback data and shows non-dismissible warning banner — no crash, no error-only state |
 
 ---
 
@@ -222,3 +223,4 @@ sequenceDiagram
 | 2026-09-15 | Specified aria-live content and trigger: "Showing N of T colors" on debounce resolution | GAP-07 |
 | 2026-09-15 | Added swatch text contrast logic (relative luminance → dark/light text) | GAP-08 |
 | 2026-09-15 | Pinned Node.js 20 LTS in CI spec; resolved OAQ-03 | GAP-10 |
+| 2026-09-29 | Added NFR-07 (Reliability) to Section 6 NFR decisions table; synced generated date to requirements.md refresh | requirements.md regenerated 2026-09-29 |
