@@ -25,7 +25,7 @@ graph TD
         AppJS["app.js (ES module)\ninitApp / applyFilter /\nrenderChunk / openModal"]
         FilterJS["lib/filter.js\nFilter Engine"]
         ColorUtils["lib/colorUtils.js\nHEX→RGB→HSL,\ncontrast ratio,\nswatch text colour"]
-        Debounce["debounce()\nDEBOUNCE_MS=150\ntrailing edge"]
+        Debounce["lib/debounce.js\nDEBOUNCE_MS=150\ntrailing edge"]
         Data["colors.v1.json\nColor Dataset"]
         Fallback["Embedded Fallback\ninline in app.js"]
     end
@@ -38,9 +38,11 @@ graph TD
     end
 
     subgraph "CI - GitHub Actions (Node 20 LTS)"
-        CI["build-and-test job\nnpm test"]
+        CI["unit-tests + e2e-tests\nnode ci/test-*.js + playwright"]
         TestFilter["ci/test-filter.js\nFilter Smoke Test"]
         TestColor["ci/test-colorUtils.js\nColor Math Smoke Test"]
+        TestDebounce["ci/test-debounce.js\nDebounce Smoke Test"]
+        E2E["tests/e2e/\nPlaywright (Chromium)\nAll AC-XX, EC-XX"]
     end
 
     User -->|interacts| HTML
@@ -63,8 +65,11 @@ graph TD
     AppJS -->|updates on debounce resolution| ARIA
     CI -->|runs| TestFilter
     CI -->|runs| TestColor
+    CI -->|runs| TestDebounce
+    CI -->|runs| E2E
     TestFilter -->|imports| FilterJS
     TestColor -->|imports| ColorUtils
+    TestDebounce -->|imports| Debounce
 ```
 
 ---
@@ -74,18 +79,20 @@ graph TD
 | Component | Technology | Responsibility |
 |---|---|---|
 | `index.html` | HTML5 | App shell: layout skeleton, filter controls, swatch container, loading state, empty state, modal markup, ARIA landmark regions |
-| `styles.css` | CSS3 (custom properties, Flexbox, Grid) | Responsive layout, swatch grid, modal overlay, offline banner, warning colour token, loading/empty state styles |
-| `app.js` | Vanilla JS ES module (ES2020) | Orchestrator with named exports: `initApp`, `applyFilter`, `renderChunk`, `openModal`. Manages app state machine (`loading → ready \| error`), wires events, drives chunked render with generation ID, controls offline banner |
+| `styles.css` | CSS3 (custom properties, Flexbox, Grid) | Responsive layout, swatch grid, modal overlay, offline banner, warning colour token, loading/empty state styles; `@media (prefers-reduced-motion: reduce)` disables all transitions and animations |
+| `app.js` | Vanilla JS ES module (ES2020) | Orchestrator with named exports: `initApp`, `applyFilter`, `renderChunk`, `openModal`. Manages app state machine (`loading → ready`); two `ready` variants: normal and offline (fallback data + warning banner active). Imports `lib/debounce.js`. Wires events, drives chunked render with generation ID, controls offline banner |
 | `lib/filter.js` | Pure vanilla JS | Stateless filter functions — filter by name query and family; importable by both `app.js` and CI test |
 | `lib/colorUtils.js` | Pure vanilla JS | HEX→RGB→HSL conversion, WCAG contrast ratio calculation, swatch text colour selection (dark/light based on relative luminance). Importable by modal and CI test |
-| `debounce()` | Vanilla JS (inline utility) | Trailing-edge debounce with `DEBOUNCE_MS = 150`. Wraps filter input handler to throttle DOM updates and `aria-live` announcements |
+| `lib/debounce.js` | Pure vanilla JS | Trailing-edge debounce utility — `debounce(fn, delay)`. Exports `DEBOUNCE_MS = 150` constant. No DOM coupling; importable by `app.js` and CI tests |
 | Loading State | HTML element in `index.html` | Spinner/skeleton shown on page load; hidden after first chunk renders. Controlled by `app.js` state machine |
 | Empty State | HTML element in `index.html` | Message shown when filtered array is empty (EC-02). Hidden by default; shown by `app.js` when `filteredColors.length === 0` |
 | `colors.v1.json` | JSON static asset | Master color dataset. Required fields per entry: `name` (string), `hex` (string), `family` (string). Entries missing any required field are dropped during normalisation |
 | `ci/test-filter.js` | Node.js (no test framework) | Smoke test for `lib/filter.js` — imported directly, runs with `node` |
 | `ci/test-colorUtils.js` | Node.js (no test framework) | Smoke test for `lib/colorUtils.js` — verifies HEX→RGB, contrast ratio, and text colour selection |
-| `package.json` | npm | Scripts: `serve` (http-server with CSP header), `test` (runs both CI smoke tests) |
-| `.github/workflows/ci.yml` | GitHub Actions (Node 20 LTS) | Runs `npm test` on every pull request |
+| `ci/test-debounce.js` | Node.js (no test framework) | Smoke test for `lib/debounce.js` — verifies debounce timing and `DEBOUNCE_MS` constant |
+| `tests/e2e/` | Playwright (`@playwright/test`) | End-to-end browser tests on Chromium — covers all AC-XX and EC-XX acceptance criteria |
+| `package.json` | npm | Scripts: `serve` (http-server with CSP header), `test` (runs all CI smoke tests) |
+| `.github/workflows/ci.yml` | GitHub Actions (Node 20 LTS) | Two jobs on every pull request: `unit-tests` (`node ci/test-filter.js && node ci/test-colorUtils.js && node ci/test-debounce.js`); `e2e-tests` (`npx playwright test --project=chromium`) |
 
 ---
 
@@ -143,6 +150,7 @@ sequenceDiagram
     Filter-->>App: Filtered subset
     App-->>App: Increment generation ID, cancel stale rAF chunks
     App-->>User: Re-render swatches
+    App-->>User: aria-live: "Showing N of T colors" (DD-08)
 
     User->>App: Arrow key navigation on swatch list
     App-->>User: Roving tabindex moves focus (DD-01)
@@ -155,7 +163,7 @@ sequenceDiagram
 
     User->>App: Clicks Copy HEX
     App->>CB: navigator.clipboard.writeText(hex)
-    CB-->>User: HEX copied (or silent fallback if API unavailable)
+    CB-->>User: HEX copied (or shows fallback message if API unavailable — EC-04, DD-05)
 ```
 
 ### Flow Description
@@ -166,11 +174,11 @@ sequenceDiagram
 4. Swatches rendered in chunks of **50 per `requestAnimationFrame` frame**. Each render job holds a generation ID; stale jobs self-cancel if the generation has changed.
 5. Designer types a search query → **150ms trailing-edge debounce** → `filter.js` runs in-memory → generation ID incremented → stale chunks cancelled → swatches re-rendered. `aria-live` announces `"Showing N of T colors"` once per debounce resolution.
 6. Zero results → empty state message shown instead of blank list.
-7. Designer selects family from dropdown → same filter pipeline.
+7. Designer selects family from dropdown → same filter pipeline → `aria-live` immediately announces updated result count (DD-08).
 8. Arrow keys navigate swatches (roving `tabindex`, `role="listbox"` — DD-01). Enter opens details modal.
 9. Details modal shows Name, HEX, RGB, HSL, contrast ratios. Swatch text colour (dark/light) determined by `colorUtils.js` relative luminance.
 10. Escape closes modal; focus returns to the triggering swatch.
-11. Copy HEX → `navigator.clipboard.writeText(hex)`; silent fallback if Clipboard API unavailable.
+11. Copy HEX → `navigator.clipboard.writeText(hex)`; if Clipboard API is unavailable or permission denied, a DOM message `"Could not copy — please copy manually"` is shown in the modal (EC-04, DD-05).
 
 ---
 
@@ -180,7 +188,7 @@ sequenceDiagram
 |---|---|
 | Performance — p95 ≤ 100ms | In-memory array filtering (no I/O on keypress); **150ms trailing-edge debounce** on search input; **chunked DOM writes: 50 items per `requestAnimationFrame` frame**; generation ID pattern cancels stale render loops on re-filter |
 | Usability / Responsive | CSS Flexbox swatch row with `overflow-x: auto`; media queries for stacking controls on mobile; loading state and empty state prevent blank-screen confusion |
-| Accessibility — WCAG 2.1 AA | Semantic HTML; `role="listbox"` with roving `tabindex` on swatch list (arrow-key nav, Enter opens modal, Escape closes — DD-01); `aria-live="polite"` announces `"Showing N of T colors"` once per debounce resolution; focus trap in modal, focus returns to trigger on close; `aria-label` on all controls; swatch text colour (dark/light) set by relative luminance to maintain 4.5:1 contrast (WCAG SC 1.4.3) |
+| Accessibility — WCAG 2.1 AA | Semantic HTML; `role="listbox"` with roving `tabindex` on swatch list (arrow-key nav, Enter opens modal, Escape closes — DD-01); `aria-live="polite"` announces `"Showing N of T colors"` on every filter operation (debounce resolution for search; immediately for dropdown — DD-08); `aria-busy="true"` on swatch container during loading state, removed on `ready`; focus trap in modal, focus returns to trigger on close; `aria-label` on all controls; swatch text colour (dark/light) set by relative luminance to maintain 4.5:1 contrast (WCAG SC 1.4.3); `@media (prefers-reduced-motion: reduce)` in `styles.css` disables all transitions and animations |
 | Security | `textContent` (never `innerHTML`) for all data-derived DOM writes; JSON entries normalised before render; Clipboard API invoked only on explicit user gesture; CSP header `default-src 'self'` served via `http-server --header` flag |
 | Maintainability | `lib/filter.js` and `lib/colorUtils.js` are pure modules with no DOM coupling — each independently testable; `app.js` structured as ES module with named exports (`initApp`, `applyFilter`, `renderChunk`, `openModal`) |
 | Compatibility — Chrome only | ES2020 syntax (`fetch`, optional chaining, `Promise`, `navigator.clipboard`) used freely; no transpile or polyfill step needed |
@@ -224,3 +232,4 @@ sequenceDiagram
 | 2026-09-15 | Added swatch text contrast logic (relative luminance → dark/light text) | GAP-08 |
 | 2026-09-15 | Pinned Node.js 20 LTS in CI spec; resolved OAQ-03 | GAP-10 |
 | 2026-09-29 | Added NFR-07 (Reliability) to Section 6 NFR decisions table; synced generated date to requirements.md refresh | requirements.md regenerated 2026-09-29 |
+| 2026-09-29 | Updated clipboard fallback to show visible message (DR2-01/DD-05); moved debounce() to lib/debounce.js (DR2-02/DD-06); simplified state machine to `loading → ready` with offlineMode flag (DR2-03/DD-07); added aria-live trigger for dropdown selection (DR2-04/DD-08); added aria-busy spec for loading state (DR2-05); added prefers-reduced-motion to styles.css (DR2-06); added E2E tests/e2e/ and two-job CI spec (DR2-07) | Design review second pass |
