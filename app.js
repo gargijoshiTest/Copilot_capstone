@@ -1,8 +1,8 @@
 import { filterColors } from './lib/filter.js';
 import { hexToRgb, rgbToHsl, getContrastRatio, getSwatchTextColor } from './lib/colorUtils.js';
+import { debounce, DEBOUNCE_MS } from './lib/debounce.js';
 
 const CHUNK_SIZE = 50;
-const DEBOUNCE_MS = 150;
 
 const FALLBACK_COLORS = [
   { name: 'Crimson',      hex: '#DC143C', family: 'Red'     },
@@ -19,14 +19,6 @@ let triggerElement = null;
 
 // --- Utilities ---
 
-export function debounce(fn, ms) {
-  let timer;
-  return (...args) => {
-    clearTimeout(timer);
-    timer = setTimeout(() => fn(...args), ms);
-  };
-}
-
 function normalise(raw) {
   if (!Array.isArray(raw)) {
     console.warn('Color data is not an array, using fallback.');
@@ -39,21 +31,24 @@ function normalise(raw) {
   });
 }
 
-// --- State machine (DD-04) ---
+// --- State machine (DD-07: loading → ready; offlineMode flag; no error state) ---
 
 export function setAppState(state) {
-  const loading = document.getElementById('loading-state');
-  const search  = document.getElementById('search');
-  const family  = document.getElementById('family-filter');
+  const loading   = document.getElementById('loading-state');
+  const search    = document.getElementById('search');
+  const family    = document.getElementById('family-filter');
+  const swatches  = document.getElementById('swatch-list');
 
   if (state === 'loading') {
     loading.hidden = false;
     search.disabled = true;
     family.disabled = true;
+    swatches.setAttribute('aria-busy', 'true');
   } else {
     loading.hidden = true;
     search.disabled = false;
     family.disabled = false;
+    swatches.setAttribute('aria-busy', 'false');
   }
 }
 
@@ -76,7 +71,7 @@ export function renderChunk(filtered, generation, offset) {
   if (generation !== currentGeneration) return;
 
   const list = document.getElementById('swatch-list');
-  if (offset === 0) list.innerHTML = '';
+  if (offset === 0) list.replaceChildren();
 
   const chunk = filtered.slice(offset, offset + CHUNK_SIZE);
   chunk.forEach((color, i) => {
@@ -84,6 +79,7 @@ export function renderChunk(filtered, generation, offset) {
     btn.className = 'swatch';
     btn.setAttribute('role', 'option');
     btn.setAttribute('aria-selected', 'false');
+    btn.setAttribute('aria-label', `${color.name} ${color.hex}`);
     btn.style.backgroundColor = color.hex;
     btn.style.color = getSwatchTextColor(color.hex);
     btn.tabIndex = (offset === 0 && i === 0) ? 0 : -1;
@@ -124,7 +120,7 @@ export function applyFilter() {
 
   const emptyState = document.getElementById('empty-state');
   if (filtered.length === 0) {
-    document.getElementById('swatch-list').innerHTML = '';
+    document.getElementById('swatch-list').replaceChildren();
     emptyState.hidden = false;
   } else {
     emptyState.hidden = true;
@@ -160,6 +156,10 @@ export function openModal(color, trigger) {
   document.getElementById('modal-contrast-black').textContent =
     getContrastRatio(color.hex, '#000000').toFixed(2) + ':1';
 
+  const copyMsg = document.getElementById('copy-message');
+  copyMsg.hidden = true;
+  copyMsg.textContent = '';
+
   document.getElementById('btn-copy').onclick = () => copyHex(color.hex);
   modal.showModal();
   document.getElementById('btn-close-modal').focus();
@@ -174,10 +174,21 @@ export function closeModal() {
   }
 }
 
+function showCopyMessage(msg) {
+  const el = document.getElementById('copy-message');
+  el.textContent = msg;
+  el.hidden = false;
+}
+
 function copyHex(hex) {
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(hex).catch(() => {});
+  if (!navigator.clipboard) {
+    showCopyMessage('Could not copy — please copy manually');
+    return;
   }
+  navigator.clipboard.writeText(hex).catch(err => {
+    console.warn('Clipboard write failed:', err);
+    showCopyMessage('Could not copy — please copy manually');
+  });
 }
 
 // --- Keyboard navigation (DD-01: roving tabindex) ---
@@ -200,7 +211,7 @@ function handleSwatchKeydown(e) {
   }
 }
 
-// --- Init (DD-04: state machine) ---
+// --- Init (DD-07: state machine loading → ready) ---
 
 export async function initApp() {
   setAppState('loading');

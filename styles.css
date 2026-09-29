@@ -185,6 +185,16 @@ dialog#color-modal::backdrop {
 .btn-primary { background: #4169E1; color: #fff; border-color: #4169E1; }
 .btn-primary:hover { background: #3558c7; }
 
+.copy-message {
+  font-size: .85rem;
+  color: var(--warning-text);
+  background: var(--warning-bg);
+  border: 1px solid var(--warning-border);
+  border-radius: var(--radius);
+  padding: 6px 10px;
+  margin-top: 4px;
+}
+
 @media (max-width: 600px) {
   .controls { flex-direction: column; }
   .controls input, .controls select { min-width: unset; width: 100%; }
